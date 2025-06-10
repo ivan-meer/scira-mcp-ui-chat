@@ -3,6 +3,7 @@ import { smoothStream, streamText, type UIMessage } from 'ai';
 import { appendResponseMessages } from 'ai';
 import { nanoid } from 'nanoid';
 import { initializeMCPClients, type MCPServerConfig } from '@/lib/mcp-client';
+import { saveChat, convertToDBMessages } from '@/lib/chat-store';
 
 export const runtime = 'nodejs';
 
@@ -40,11 +41,15 @@ export async function POST(req: Request) {
   // have been converted to SSE in the MCP context
   const { tools, cleanup } = await initializeMCPClients(mcpServers, req.signal);
 
-  console.log('messages', messages);
-  console.log(
-    'parts',
-    messages.map((m) => m.parts.map((p) => p))
-  );
+  console.log('=== CHAT API DEBUG ===');
+  console.log('selectedModel:', selectedModel);
+  console.log('userId:', userId);
+  console.log('chatId:', id);
+  console.log('mcpServers received:', mcpServers);
+  console.log('messages count:', messages.length);
+  console.log('messages:', JSON.stringify(messages, null, 2));
+  console.log('tools available:', Object.keys(tools));
+  console.log('total tools count:', Object.keys(tools).length);
 
   // Track if the response has completed
   let responseCompleted = false;
@@ -93,8 +98,23 @@ export async function POST(req: Request) {
     onError: (error) => {
       console.error(JSON.stringify(error, null, 2));
     },
-    async onFinish() {
+    async onFinish(result) {
       responseCompleted = true;
+
+      // Save the conversation to database
+      try {
+        // Get all messages including the final response
+        const allMessages = [...messages, ...result.response.messages];
+        
+        await saveChat({
+          id,
+          userId,
+          messages: allMessages,
+        });
+        console.log(`Chat saved with ID: ${id}`);
+      } catch (error) {
+        console.error('Error saving chat:', error);
+      }
 
       // Clean up resources - now this just closes the client connections
       // not the actual servers which persist in the MCP context

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, useContext, useRef, useMemo, useCallback } from "react";
 import { useLocalStorage, useLocalStorageMcpServers } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { startSandbox, stopSandbox } from "@/app/actions";
@@ -95,9 +95,9 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
   const activeServersRef = useRef<Record<string, boolean>>({});
 
   // Helper to get a server by ID
-  const getServerById = (serverId: string): MCPServer | undefined => {
+  const getServerById = useCallback((serverId: string): MCPServer | undefined => {
     return mcpServers.find(server => server.id === serverId);
-  };
+  }, [mcpServers]);
   
   // Update server status
   const updateServerStatus = (serverId: string, status: ServerStatus, errorMessage?: string) => {
@@ -256,8 +256,32 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
     }
   };
   
-  // Calculate mcpServersForApi based on current state
-  const mcpServersForApi = getActiveServersForApi();
+  // Calculate mcpServersForApi based on current state - make it reactive
+  const mcpServersForApi = useMemo(() => {
+    console.log('=== MCP CONTEXT DEBUG ===');
+    console.log('selectedMcpServers:', selectedMcpServers);
+    console.log('mcpServers:', mcpServers);
+    
+    const result = selectedMcpServers
+      .map(id => {
+        const server = getServerById(id);
+        console.log(`Server ${id}:`, server);
+        return server;
+      })
+      .filter((server): server is MCPServer => {
+        const isValid = !!server && server.status === 'connected';
+        console.log(`Server valid:`, isValid, server?.status);
+        return isValid;
+      })
+      .map(server => ({
+        type: 'sse' as const,
+        url: server.type === 'stdio' && server.sandboxUrl ? server.sandboxUrl : server.url,
+        headers: server.headers
+      }));
+    
+    console.log('mcpServersForApi result:', result);
+    return result;
+  }, [selectedMcpServers, mcpServers, getServerById]);
 
   return (
     <MCPContext.Provider 

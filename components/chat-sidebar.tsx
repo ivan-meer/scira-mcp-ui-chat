@@ -150,7 +150,7 @@ export function ChatSidebar() {
             </SidebarHeader>
             
             <SidebarContent className="flex flex-col h-[calc(100vh-8rem)]">
-                {/* <SidebarGroup className="flex-1 min-h-0">
+                <SidebarGroup className="flex-1 min-h-0">
                     <SidebarGroupLabel className={cn(
                         "px-4 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
                         isCollapsed ? "sr-only" : ""
@@ -235,13 +235,13 @@ export function ChatSidebar() {
                             )}
                         </SidebarMenu>
                     </SidebarGroupContent>
-                </SidebarGroup> */}
+                </SidebarGroup>
                 
-                {/* <div className="relative my-0">
+                <div className="relative my-0">
                     <div className="absolute inset-x-0">
                         <Separator className="w-full h-px bg-border/40" />
                     </div>
-                </div> */}
+                </div>
                 
                 <SidebarGroup className="flex-shrink-0">
                     <SidebarGroupLabel className={cn(

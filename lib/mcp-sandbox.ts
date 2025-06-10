@@ -14,9 +14,9 @@ export const startMcpSandbox = async ({
     const daytona = new Daytona();
     const sandbox = await daytona.create({
       resources: {
-        cpu: 2,
-        memory: 4,
-        disk: 5,
+        cpu: 1,
+        memory: 1,
+        disk: 2,
       },
       public: true,
       autoStopInterval: 0,

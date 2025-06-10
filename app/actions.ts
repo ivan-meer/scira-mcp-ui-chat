@@ -133,7 +133,8 @@ export async function stopSandbox(id: string): Promise<{ success: boolean }> {
   
   // Check if we have a sandbox with this ID
   if (!activeSandboxes.has(id)) {
-    throw new Error(`No active sandbox found with ID: ${id}`);
+    console.log(`No active sandbox found with ID: ${id}, skipping cleanup`);
+    return { success: true };
   }
   
   // Stop the sandbox

@@ -29,6 +29,10 @@ export async function initializeMCPClients(
   mcpServers: MCPServerConfig[] = [],
   abortSignal?: AbortSignal
 ): Promise<MCPClientManager> {
+  console.log('=== MCP CLIENT INIT ===');
+  console.log('Received mcpServers:', JSON.stringify(mcpServers, null, 2));
+  console.log('Server count:', mcpServers.length);
+  
   // Initialize tools
   let tools = {};
   const mcpClients: any[] = [];

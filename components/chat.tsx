@@ -3,6 +3,7 @@
 import { defaultModel, type modelID } from "@/ai/providers";
 import { useChat } from "@ai-sdk/react";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
@@ -32,13 +33,17 @@ export default function Chat() {
   const [selectedModel, setSelectedModel] = useLocalStorage<modelID>("selectedModel", defaultModel);
   const [userId, setUserId] = useState<string>('');
   const [generatedChatId, setGeneratedChatId] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
   
   // Get MCP server data from context
   const { mcpServersForApi } = useMCP();
   
-  // Initialize userId
+  // Initialize client-side state
   useEffect(() => {
-    setUserId(getUserId());
+    setIsClient(true);
+    const id = getUserId();
+    console.log('Setting userId in Chat component:', id);
+    setUserId(id);
   }, []);
   
   // Generate a chat ID if needed
@@ -49,47 +54,56 @@ export default function Chat() {
   }, [chatId]);
   
   // Use React Query to fetch chat history
-  // const { data: chatData, isLoading: isLoadingChat, error } = useQuery({
-  //   queryKey: ['chat', chatId, userId] as const,
-  //   queryFn: async ({ queryKey }) => {
-  //     const [_, chatId, userId] = queryKey;
-  //     if (!chatId || !userId) return null;
+  const { data: chatData, isLoading: isLoadingChat, error } = useQuery({
+    queryKey: ['chat', chatId, userId] as const,
+    queryFn: async ({ queryKey }) => {
+      const [_, chatId, userId] = queryKey;
+      if (!chatId || !userId) return null;
       
-  //     const response = await fetch(`/api/chats/${chatId}`, {
-  //       headers: {
-  //         'x-user-id': userId
-  //       }
-  //     });
+      const response = await fetch(`/api/chats/${chatId}`, {
+        headers: {
+          'x-user-id': userId
+        }
+      });
       
-  //     if (!response.ok) {
-  //       // For 404, return empty chat data instead of throwing
-  //       if (response.status === 404) {
-  //         return { id: chatId, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-  //       }
-  //       throw new Error('Failed to load chat');
-  //     }
+      if (!response.ok) {
+        // For 404, return empty chat data instead of throwing
+        if (response.status === 404) {
+          return { id: chatId, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        }
+        throw new Error('Failed to load chat');
+      }
       
-  //     return response.json() as Promise<ChatData>;
-  //   },
-  //   enabled: !!chatId && !!userId,
-  //   retry: 1,
-  //   staleTime: 1000 * 60 * 5, // 5 minutes
-  //   refetchOnWindowFocus: false
-  // });
+      return response.json() as Promise<ChatData>;
+    },
+    enabled: !!chatId && !!userId,
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false
+  });
   
   // Handle query errors
-  // useEffect(() => {
-  //   if (error) {
-  //     console.error('Error loading chat history:', error);
-  //     toast.error('Failed to load chat history');
-  //   }
-  // }, [error]);
+  useEffect(() => {
+    if (error) {
+      console.error('Error loading chat history:', error);
+      toast.error('Failed to load chat history');
+    }
+  }, [error]);
   
   // Prepare initial messages from query data
   const initialMessages = useMemo(() => {
-    return [];
-  }, []);
-  
+    if (!chatData?.messages) return [];
+    
+    // Convert DB messages to AI SDK format
+    return chatData.messages.map(msg => ({
+      id: msg.id,
+      role: msg.role as 'user' | 'assistant' | 'system' | 'data',
+      content: Array.isArray(msg.parts) 
+        ? msg.parts.find((p: any) => p.type === 'text')?.text || ''
+        : '',
+    }));
+  }, [chatData]);
+
   const { messages, input, handleInputChange, handleSubmit, status, stop, append } =
     useChat({
       id: chatId || generatedChatId, // Use generated ID if no chatId in URL
@@ -138,6 +152,18 @@ export default function Chat() {
   }, [chatId, generatedChatId, input, handleSubmit, router]);
 
   const isLoading = status === "streaming" || status === "submitted";
+
+  // Don't render until client-side
+  if (!isClient) {
+    return <div>Loading...</div>;
+  }
+  
+  // Debug MCP servers
+  console.log('=== CHAT COMPONENT DEBUG ===');
+  console.log('mcpServersForApi:', mcpServersForApi);
+  console.log('chatId:', chatId);
+  console.log('userId:', userId);
+  console.log('initialMessages count:', initialMessages.length);
 
   return (
     <div className="h-dvh flex flex-col justify-center w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">

@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/how2ai/scira-mcp-ui-chat/local-mcp-server.py", line 53, in <module>
+    run_server()
+  File "/home/how2ai/scira-mcp-ui-chat/local-mcp-server.py", line 46, in run_server
+    with socketserver.TCPServer(('', 8813), MCPHandler) as httpd:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/usr/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+OSError: [Errno 98] Address already in use
+2025-06-10 17:29:39,656 - demo-mcp-server - INFO - Demo MCP Server инициализирован
+2025-06-10 17:29:39,657 - demo-mcp-server - INFO - 🚀 Demo MCP SSE server running on http://localhost:8813
+2025-06-10 17:29:39,657 - demo-mcp-server - INFO - 📡 SSE endpoint: http://localhost:8813/sse
+2025-06-10 17:29:39,657 - demo-mcp-server - INFO - 🎨 UI Generator demo tools available!
+2025-06-10 17:29:39,657 - demo-mcp-server - INFO - 🔧 Add this URL as SSE MCP server in the interface
+2025-06-10 17:33:06,239 - demo-mcp-server - INFO - HTTP: "GET / HTTP/1.1" 200 -
+2025-06-10 17:33:13,952 - demo-mcp-server - INFO - HTTP: code 404, message Not Found
+2025-06-10 17:33:13,952 - demo-mcp-server - INFO - HTTP: "GET /?ide_webview_request_time=1749551595285 HTTP/1.1" 404 -

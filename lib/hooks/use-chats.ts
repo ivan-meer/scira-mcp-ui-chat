@@ -14,19 +14,33 @@ export function useChats(userId: string) {
   } = useQuery<Chat[]>({
     queryKey: ['chats', userId],
     queryFn: async () => {
-      if (!userId) return [];
+      console.log('=== CHATS QUERY DEBUG ===');
+      console.log('userId for chats query:', userId);
       
+      if (!userId) {
+        console.log('No userId, returning empty array');
+        return [];
+      }
+      
+      console.log('Fetching chats from /api/chats');
       const response = await fetch('/api/chats', {
         headers: {
           'x-user-id': userId
         }
       });
       
+      console.log('Chats API response status:', response.status);
+      
       if (!response.ok) {
+        console.error('Failed to fetch chats, status:', response.status);
         throw new Error('Failed to fetch chats');
       }
       
-      return response.json();
+      const chats = await response.json();
+      console.log('Fetched chats:', chats);
+      console.log('Chats count:', chats.length);
+      
+      return chats;
     },
     enabled: !!userId, // Only run query if userId exists
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
